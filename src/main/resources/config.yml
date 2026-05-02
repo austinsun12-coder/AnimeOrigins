@@ -1,0 +1,11 @@
+# AnimeOrigins Configuration
+settings:
+  # Allow players to change their origin after choosing (set false to lock)
+  allow-reselect: true
+  # Broadcast origin choice to server
+  broadcast-selection: true
+  # Show origin abilities in chat on login
+  show-abilities-on-login: true
+
+# Per-character cooldown overrides (seconds). Leave empty to use defaults.
+cooldowns: {}
