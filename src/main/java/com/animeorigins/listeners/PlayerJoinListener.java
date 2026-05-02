@@ -1,0 +1,73 @@
+package com.animeorigins.listeners;
+
+import com.animeorigins.AnimeOriginsPlugin;
+import com.animeorigins.Origin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.GameMode;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+
+public class PlayerJoinListener implements Listener {
+
+    private final AnimeOriginsPlugin plugin;
+
+    public PlayerJoinListener(AnimeOriginsPlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        Origin origin = plugin.getOriginManager().getOrigin(player);
+
+        if (origin == null) {
+            // Prompt to choose
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                player.sendMessage("");
+                player.sendMessage("§6§l⚡ AnimeOrigins §r§7- Welcome, " + player.getName() + "!");
+                player.sendMessage("§7You have not chosen an origin yet.");
+                player.sendMessage("§eType §a/origin §eto choose your anime character!");
+                player.sendMessage("");
+            }, 40L);
+        } else {
+            // Re-apply all attribute modifiers for this origin
+            com.animeorigins.managers.AttributeManager.apply(player, origin);
+
+            // Enable double-jump flight for Wukong
+            if (origin == Origin.WUKONG && player.getGameMode() != GameMode.CREATIVE) {
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    if (player.isOnline()) player.setAllowFlight(true);
+                }, 5L);
+            }
+
+            if (plugin.getConfig().getBoolean("settings.show-abilities-on-login", true)) {
+                plugin.getServer().getScheduler().runTaskLater(plugin, () ->
+                    sendOriginInfo(player, origin), 60L);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        // Clear all modifiers on quit — they're re-applied on next login
+        com.animeorigins.managers.AttributeManager.clearAll(player);
+    }
+
+    public static void sendOriginInfo(Player player, Origin origin) {
+        player.sendMessage("");
+        player.sendMessage("§6§l" + origin.getEmoji() + " " + origin.getDisplayName() + " §7| §e" + origin.getTitle());
+        player.sendMessage("§8───────────────────────────");
+        for (String line : origin.getDescription()) {
+            player.sendMessage(line);
+        }
+        player.sendMessage("§8───────────────────────────");
+        player.sendMessage("§7Abilities: §eSNEAK + RIGHT-CLICK §7= Primary  |  §eSNEAK + LEFT-CLICK §7= Secondary");
+        player.sendMessage("");
+    }
+}
